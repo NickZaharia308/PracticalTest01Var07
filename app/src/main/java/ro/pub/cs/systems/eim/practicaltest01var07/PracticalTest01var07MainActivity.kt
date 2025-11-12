@@ -1,6 +1,10 @@
 package ro.pub.cs.systems.eim.practicaltest01var07
 
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -23,6 +27,13 @@ object Constants {
     const val INTENT_NUMBER3 = "ro.pub.cs.systems.eim.practicaltest01var07.Number3_key"
     const val INTENT_NUMBER4 = "ro.pub.cs.systems.eim.practicaltest01var07.Number4_key"
     const val BROADCAST_MESSAGE_KEY = "broadcast_message_key"
+    const val ACTION = "ro.pub.cs.systems.eim.practicaltest01var07.action1"
+    const val TEXT_SERVICE_KEY = "Text_key"
+
+    const val SERVICE_NUMBER1 = "ro.pub.cs.systems.eim.practicaltest01var07.Number1_key_service"
+    const val SERVICE_NUMBER2 = "ro.pub.cs.systems.eim.practicaltest01var07.Number2_key_service"
+    const val SERVICE_NUMBER3 = "ro.pub.cs.systems.eim.practicaltest01var07.Number3_key_service"
+    const val SERVICE_NUMBER4 = "ro.pub.cs.systems.eim.practicaltest01var07.Number4_key_service"
 }
 class PracticalTest01var07MainActivity : AppCompatActivity() {
 
@@ -37,7 +48,34 @@ class PracticalTest01var07MainActivity : AppCompatActivity() {
     private var sum = 0
     private var product = 1
 
+    private var isServiceStarted = false
+
+    private val messageBroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val message = intent?.getStringExtra(Constants.BROADCAST_MESSAGE_KEY)
+            var rnd1_str = intent?.getStringExtra(Constants.SERVICE_NUMBER1)
+            var rnd2_str = intent?.getStringExtra(Constants.SERVICE_NUMBER2)
+            var rnd3_str = intent?.getStringExtra(Constants.SERVICE_NUMBER3)
+            var rnd4_str = intent?.getStringExtra(Constants.SERVICE_NUMBER4)
+
+            val val1 = rnd1_str?.toIntOrNull() ?: 0
+            val val2 = rnd2_str?.toIntOrNull() ?: 0
+            val val3 = rnd3_str?.toIntOrNull() ?: 0
+            val val4 = rnd4_str?.toIntOrNull() ?: 0
+            sum = val1 + val2 + val3 + val4
+            product = val1 * val2 * val3 * val4
+
+            editText1!!.setText(rnd1_str)
+            editText2!!.setText(rnd2_str)
+            editText3!!.setText(rnd3_str)
+            editText4!!.setText(rnd4_str)
+
+            Log.d("MainActivity", "Received broadcast: $message")
+        }
+    }
     private inner class PracticalTestListener : View.OnClickListener {
+
+
         override fun onClick(view: View) {
             when (view.id) {
                 R.id.button_random -> {
@@ -119,6 +157,7 @@ class PracticalTest01var07MainActivity : AppCompatActivity() {
             Log.d("SUMAPROD", "Produsul este $savedProduct")
         }
 
+        startTheService()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -138,5 +177,45 @@ class PracticalTest01var07MainActivity : AppCompatActivity() {
 
         }
 
+    }
+
+
+    private fun startTheService() {
+        val serviceIntent = Intent(applicationContext, PracticalTest01Var07Service::class.java)
+
+        applicationContext.startService(serviceIntent)
+        isServiceStarted = true
+        Log.d("MainActivity", "Service started.")
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        val intentFilter = IntentFilter()
+        intentFilter.addAction(Constants.ACTION)
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(messageBroadcastReceiver, intentFilter, RECEIVER_EXPORTED)
+        }
+    }
+
+    override fun onPause() {
+        unregisterReceiver(messageBroadcastReceiver)
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        stopTheService()
+        super.onDestroy()
+    }
+
+    private fun stopTheService() {
+        if (isServiceStarted) {
+            val serviceIntent = Intent(applicationContext, PracticalTest01Var07Service::class.java)
+            applicationContext.stopService(serviceIntent)
+            isServiceStarted = false
+            Log.d("MainActivity", "Service stopped.")
+        }
     }
 }

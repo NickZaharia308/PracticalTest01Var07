@@ -6,7 +6,21 @@ import android.os.IBinder
 
 class PracticalTest01Var07Service : Service() {
 
-    override fun onBind(intent: Intent): IBinder {
-        TODO("Return the communication channel to the service.")
+    private lateinit var processingThread: ProcessingThread
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        processingThread = ProcessingThread(this)
+        processingThread.start()
+
+        return START_REDELIVER_INTENT
+    }
+
+    override fun onBind(intent: Intent): IBinder? {
+        return null
+    }
+
+    override fun onDestroy() {
+        processingThread.stopThread()
+        super.onDestroy()
     }
 }
